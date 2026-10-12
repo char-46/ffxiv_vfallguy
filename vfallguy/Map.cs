@@ -149,6 +149,7 @@ public class Map : IDisposable
     public Vector3 PlayerPos;
     public float AOELeeway = 0.5f;
     public bool DynamicPathfinding;
+    public float RepathInterval = 0.25f;
     private DateTime _nextPathfindAt;
 
     public Map(GameEvents events, PathfindMap baseMap, List<(float z, float y)> heightProfile, float goalZ)
@@ -190,7 +191,7 @@ public class Map : IDisposable
                     }
                     var playerPos = PlayerPos;
                     PathTask = Task.Run(() => BuildWaypointsTask(mapWithAOEs, now, playerPos));
-                    _nextPathfindAt = now.AddSeconds(2);
+                    _nextPathfindAt = now.AddSeconds(RepathInterval);
                 }
             }
             else

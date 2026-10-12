@@ -25,6 +25,7 @@ public class MainWindow : Window, IDisposable
     private bool _showAOEText;
     private bool _showPathfind;
     private bool _dynamicPathfind;
+    private float _repathInterval = 0.25f;
     private bool _autoMove;
     private bool _captureEvents;
     private readonly OverrideMovement _mover = new();
@@ -107,6 +108,13 @@ public class MainWindow : Window, IDisposable
         ImGui.Checkbox("显示 AOE 调试文本", ref _showAOEText);
         ImGui.Checkbox("显示规划路线", ref _showPathfind);
         ImGui.Checkbox("动态算路 (实验)", ref _dynamicPathfind);
+        if (_dynamicPathfind)
+        {
+            using (ImRaii.PushIndent())
+            {
+                ImGui.SliderFloat("重算间隔###r", ref _repathInterval, 0.1f, 2.0f, "%.2f 秒");
+            }
+        }
         ImGui.Checkbox("自动移动 (实验)", ref _autoMove);
         ImGui.Checkbox("记录事件 (数据采集)", ref _captureEvents);
 
@@ -163,7 +171,10 @@ public class MainWindow : Window, IDisposable
         }
 
         if (_map != null)
+        {
             _map.DynamicPathfinding = _dynamicPathfind;
+            _map.RepathInterval = _repathInterval;
+        }
         _map?.Update();
     }
 
