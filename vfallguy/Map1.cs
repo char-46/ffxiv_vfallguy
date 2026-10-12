@@ -18,34 +18,39 @@ public class Map1 : Map
 
     private static PathfindMap BuildBaseMap()
     {
-        var map = new PathfindMap(0.5f, 0.25f, new(1, 10, -280), 17, 90, 60);
+        // walls derived from BGCollision terrain scan (terrain_1165_20261012_180442.json)
+        var map = new PathfindMap(0.5f, 0.25f, new(0, 10, -280), 20, 100, 60);
 
-        // first section: rotating circles, wide corridor
-        map.BlockPixelsInsideAlignedRect(-30, -11, -195, -246, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(17, 30, -195, -246, 0, 60, 100, 0);
-        // gate section: narrow corridor
-        map.BlockPixelsInsideAlignedRect(-30, -7.5f, -246, -264, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(7.5f, 30, -246, -264, 0, 60, 100, 0);
-        // conveyor / pendulum section: left-side fast lane
-        map.BlockPixelsInsideAlignedRect(-30, -15, -264, -338, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(4, 30, -264, -338, 0, 60, 100, 0);
-        // pre-slope channel
-        map.BlockPixelsInsideAlignedRect(-30, -5.5f, -338, -344, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(1.5f, 30, -338, -344, 0, 60, 100, 0);
+        // start pad
+        map.BlockPixelsInsideAlignedRect(-30, -11.5f, -189, -180, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(11.5f, 30, -189, -180, 0, 60, 100, 0);
+        // circles corridor
+        map.BlockPixelsInsideAlignedRect(-30, -18.5f, -254, -189, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(18.5f, 30, -254, -189, 0, 60, 100, 0);
+        // funnel + gate
+        map.BlockPixelsInsideAlignedRect(-30, -7.5f, -263, -254, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(7.5f, 30, -263, -254, 0, 60, 100, 0);
+        // pendulum section (low ledge y6 on the left, plateau y10 on the right)
+        map.BlockPixelsInsideAlignedRect(-30, -15.5f, -336, -263, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(15.5f, 30, -336, -263, 0, 60, 100, 0);
         // slope
-        map.BlockPixelsInsideAlignedRect(-30, -6.5f, -344, -366, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(6.5f, 30, -344, -366, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(-30, -8.5f, -366, -336, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(8.5f, 30, -366, -336, 0, 60, 100, 0);
+        // finish
+        map.BlockPixelsInsideAlignedRect(-30, -14.5f, -380, -366, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(14.5f, 30, -380, -366, 0, 60, 100, 0);
 
         return map;
     }
 
     private static readonly List<(float z, float y)> _heightProfile =
     [
-        (-370f, 19f),
-        (-363.8f, 18.2f),
-        (-355.8f, 16f),
-        (-347.8f, 13.7f),
-        (-340f, 10f),
+        (-370f, 18.9f),
+        (-362f, 18.4f),
+        (-350f, 15.7f),
+        (-342f, 12.8f),
+        (-336f, 10f),
+        (-280f, 10f),
         (-180f, 10f),
     ];
 
@@ -53,9 +58,8 @@ public class Map1 : Map
     {
         MovementZones =
         [
-            (-305f, -262f, 2.0f, true),
-            (-322f, -305f, 0.6f, false),
-            (-366f, -344f, 0.6f, true),
+            (-335f, -278f, 0.6f, false), // pendulum section: slippery, measured 3.6 yalm/s
+            (-366f, -344f, 0.6f, true),  // slope: slippery + never stop (slide back)
         ];
 
         for (int i = 0; i < 5; ++i)
