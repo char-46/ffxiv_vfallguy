@@ -125,6 +125,11 @@ public class Map1B : Map
     private AOESequence _gate1 = null!;
     private AOESequence _gate2 = null!;
 
+    // 1B 金碟狂热 (攀爬迷宫): 链阵(34716, 1.4s/4.2s) + 带(34717) + 门(34718, 8.15s 反相)
+    // 特殊机制: 冰地板(滑)、加速度炸弹(状态期间移动会爆炸, 需停手)、手指指引(按住W固定手指方向并按其移动/松开W手指旋转)、交替出现/消失的地板
+    // -> 手指/消失地板段落应加入 NoAutoZones 手动通过 (z 范围待采)
+    public override string DisplayName => "金碟狂热";
+
     public Map1B(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, -286)
     {
         // 34716: pulsing chain nodes (1.4s active / 4.2s cycle) on the climbing terraces

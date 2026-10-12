@@ -164,6 +164,8 @@ public class Map : IDisposable
     public bool DynamicPathfinding;
     public float RepathInterval = 0.25f;
     public List<(float zMin, float zMax, float speedMul, bool noStay)> MovementZones = [];
+    public List<(float zMin, float zMax, string reason)> NoAutoZones = []; // manual-play sections (ice/finger floors etc.)
+    public virtual string DisplayName => GetType().Name;
     private DateTime _nextPathfindAt;
 
     public Map(GameEvents events, PathfindMap baseMap, List<(float z, float y)> heightProfile, float goalZ)
@@ -230,16 +232,27 @@ public class Map : IDisposable
             sy = mapWithAOEs.ClampY(sy);
             var goalY = mapWithAOEs.WorldToGrid(new Vector3(0, 0, GoalZ)).y;
             var zones = MovementZones.Select(z => (mapWithAOEs.WorldToGrid(new Vector3(0, 0, z.zMin)).y, mapWithAOEs.WorldToGrid(new Vector3(0, 0, z.zMax)).y, z.speedMul, z.noStay)).ToList();
-            var pathfind = new PathfindFloodFill(mapWithAOEs, Speed, sx, sy, 0, zones);
-            var solution = pathfind.SolveUntilY(goalY).ToList();
-            if (solution.Count == 0)
+            var pathfind = new PathfindFloodFill(mapWithAOEs, Speed, sx, sy, 0, goalY, zones);
+            var solutionRaw = pathfind.SolveUntilY(goalY).ToList();
+            if (solutionRaw.Count == 0)
                 return [];
 
-            solution.Reverse();
+            solutionRaw.Reverse();
+            // drop mid-air trajectory points; flag takeoff (ground point followed by air) as jump
+            var solution = new List<(int x, int y, int t, bool jump)>();
+            for (int i = 0; i < solutionRaw.Count; ++i)
+            {
+                if (solutionRaw[i].air)
+                    continue;
+                solution.Add((solutionRaw[i].x, solutionRaw[i].y, solutionRaw[i].t, i + 1 < solutionRaw.Count && solutionRaw[i + 1].air));
+            }
+
             for (int i = 1; i < solution.Count - 1; ++i)
             {
+                if (solution[i].jump)
+                    continue; // never thin jump takeoffs
                 var curr = solution[i];
-                if (solution[i + 1].x - curr.x == curr.x - solution[i - 1].x && solution[i + 1].y - curr.y == curr.y - solution[i - 1].y)
+                if (!solution[i + 1].jump && solution[i + 1].x - curr.x == curr.x - solution[i - 1].x && solution[i + 1].y - curr.y == curr.y - solution[i - 1].y)
                 {
                     solution.RemoveAt(i);
                     --i;
@@ -252,7 +265,7 @@ public class Map : IDisposable
             var res = new List<Waypoint>();
             DateTime prevMoveAt = now;
             Vector3 prevPos = playerPos;
-            foreach (var (x, y, t) in solution.Skip(firstNontrivial > 0 ? firstNontrivial - 1 : 0))
+            foreach (var (x, y, t, jump) in solution.Skip(firstNontrivial > 0 ? firstNontrivial - 1 : 0))
             {
                 var p = BaseMap.GridToWorld(x, y, 0.5f, 0.5f);
                 p.Y = HeightAt(p.Z);
@@ -260,7 +273,7 @@ public class Map : IDisposable
                 var moveAt = now.AddSeconds(t * mapWithAOEs.TimeResolution - travel);
                 if (moveAt < prevMoveAt)
                     moveAt = prevMoveAt;
-                res.Add(new() { Dest = p, StartMoveAt = moveAt > now.AddSeconds(0.1f) ? moveAt : default });
+                res.Add(new() { Dest = p, StartMoveAt = moveAt > now.AddSeconds(0.1f) ? moveAt : default, Jump = jump });
                 prevMoveAt = moveAt.AddSeconds(travel);
                 prevPos = p;
             }

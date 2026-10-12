@@ -110,6 +110,9 @@ public class Map3 : Map
         (286.9f, 3.2f),
     ];
 
+    // 3 金碟登山: z323(y4) -> z123(y50) 爬坡上行; 阶梯(34801) + 矩形排(34804/34812) + 旋转(34802) + 对偶(34796/29795)
+    public override string DisplayName => "金碟登山";
+
     public Map3(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, 123)
     {
         _mech1Rotating = CreateRotatingSequence(1.2f, 6, 267.5f, [-10, 10]);

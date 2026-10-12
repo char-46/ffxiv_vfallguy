@@ -135,6 +135,9 @@ public class Map2A : Map
     private readonly List<AOESequence> _cornersA = [];
     private readonly List<AOESequence> _cornersB = [];
 
+    // 2A 不要掉下去 (环形桥): 中央深渊 + 双刃旋转梁(34808 枢轴 0.62s, 34797/34798 刃尖 9.91s/圈) + 四角(34805)
+    public override string DisplayName => "不要掉下去";
+
     public Map2A(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, -146)
     {
         // 34808: central pivot pulsing every 0.62s (two-blade spinner, ~9.91s/rev, blades 180 deg apart)

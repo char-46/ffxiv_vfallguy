@@ -55,6 +55,10 @@ public class Map1 : Map
         (-180f, 10f),
     ];
 
+    // 1A 金蝶狂欢: 圆阵(34773) -> 闸门柱(34774) -> 钟摆(34775, 打中飞两侧低台惩罚区) -> 车道(34776) -> 湿滑坡面
+    // 已知特殊移动: 移动命令(左/右/后)、旋转移动、湿滑坡面(3693) — 对应状态id待采
+    public override string DisplayName => "金蝶狂欢";
+
     public Map1(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, -362)
     {
         MovementZones =

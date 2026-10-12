@@ -36,6 +36,10 @@ public class MainWindow : Window, IDisposable
     private bool _haveCapturePos;
     private uint _lastCaptureTerritory;
     private readonly HashSet<uint> _lastStatuses = new();
+    private string? _statusLock;
+    private string? _noAutoHint;
+    // 无法移动类(1284) 死亡(1548) 止息(3782); add more as identified from capture logs
+    private static readonly HashSet<uint> MoveBlockStatuses = [1284, 1548, 3782];
     private DateTime _autoJoinAt = DateTime.MaxValue;
     private DateTime _autoLeaveAt = DateTime.MaxValue;
     private int _numPlayersInDuty;
@@ -148,9 +152,23 @@ public class MainWindow : Window, IDisposable
             var strats = _map.Strats();
             if (strats.Length > 0)
                 ImGui.TextUnformatted(strats);
+            ImGui.TextUnformatted($"地图: {_map.DisplayName}");
             ImGui.TextUnformatted($"坐标: {_map.PlayerPos}");
             ImGui.TextUnformatted($"路径: {_map.PathSkip}-{_map.Path.Count}");
             ImGui.TextUnformatted($"速度: {_movementSpeed}");
+            if (_statusLock != null)
+            {
+                using (ImRaii.PushColor(ImGuiCol.Text, 0xff00a5ff))
+                    ImGui.TextUnformatted($"移动锁定: {_statusLock}");
+            }
+            if (_noAutoHint != null)
+            {
+                using (ImRaii.PushColor(ImGuiCol.Text, 0xff00a5ff))
+                    ImGui.TextUnformatted($"手动段: {_noAutoHint}");
+            }
+            var statuses = Service.ObjectTable.LocalPlayer?.StatusList.Where(s => s.StatusId != 0).Select(s => s.StatusId.ToString()).ToArray();
+            if (statuses is { Length: > 0 })
+                ImGui.TextUnformatted($"状态: {string.Join(",", statuses)}");
 
             //foreach (var aoe in _map.AOEs.Where(aoe => aoe.NextActivation != default))
             //{
@@ -207,13 +225,41 @@ public class MainWindow : Window, IDisposable
     private void UpdateAutoMove()
     {
         GameEvents.CaptureEvents = _captureEvents;
+        _statusLock = null;
+        _noAutoHint = null;
         if (!_autoMove || !IsOpen || _map == null || Service.Condition[ConditionFlag.BetweenAreas])
         {
             _mover.Enabled = false;
             return;
         }
 
+        // control-impairing statuses (无法移动/死亡/止息...): release control entirely
+        var player = Service.ObjectTable.LocalPlayer;
+        if (player != null)
+        {
+            foreach (var s in player.StatusList)
+            {
+                if (MoveBlockStatuses.Contains(s.StatusId))
+                {
+                    _statusLock = $"状态 {s.StatusId}";
+                    _mover.Enabled = false;
+                    return;
+                }
+            }
+        }
+
         var pos = _map.PlayerPos;
+        // manual-play sections (ice/finger floors etc.)
+        foreach (var (zMin, zMax, reason) in _map.NoAutoZones)
+        {
+            if (pos.Z >= zMin && pos.Z <= zMax)
+            {
+                _noAutoHint = reason;
+                _mover.Enabled = false;
+                return;
+            }
+        }
+
         while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.0f)
             ++_map.PathSkip;
         if (_map.Path.Count <= _map.PathSkip)
@@ -223,16 +269,14 @@ public class MainWindow : Window, IDisposable
         }
 
         var wp = _map.Path[_map.PathSkip];
-        if (wp.Jump && (wp.Dest - pos).LengthXZ() < 1.2f)
+        if (wp.Jump && (wp.Dest - pos).LengthXZ() < 0.8f)
             _mover.ExecuteJump();
         if (wp.StartMoveAt != default && _now < wp.StartMoveAt)
         {
-            // brief waits: keep gliding toward the point instead of hard-stopping (anti-jitter)
-            if ((_now - wp.StartMoveAt).TotalSeconds < -0.4)
-            {
-                _mover.Enabled = false;
-                return;
-            }
+            // full stop while waiting: hold position instead of drifting
+            _mover.DesiredPosition = pos;
+            _mover.Enabled = true;
+            return;
         }
         _mover.DesiredPosition = wp.Dest;
         _mover.Enabled = true;
