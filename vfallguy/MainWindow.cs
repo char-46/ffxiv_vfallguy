@@ -28,6 +28,9 @@ public class MainWindow : Window, IDisposable
     private bool _autoMove;
     private bool _captureEvents;
     private readonly NavDriver _nav = new();
+    private Vector3 _lastCapturePos;
+    private bool _haveCapturePos;
+    private uint _lastCaptureTerritory;
     private DateTime _autoJoinAt = DateTime.MaxValue;
     private DateTime _autoLeaveAt = DateTime.MaxValue;
     private int _numPlayersInDuty;
@@ -65,6 +68,7 @@ public class MainWindow : Window, IDisposable
 
         UpdateMap();
         UpdateAutoMove();
+        UpdateCapture();
         UpdateAutoJoin();
         UpdateAutoLeave();
         DrawOverlays();
@@ -186,6 +190,33 @@ public class MainWindow : Window, IDisposable
             return;
         }
         _nav.Navigate(pos, wp.Dest);
+    }
+
+    private void UpdateCapture()
+    {
+        if (!_captureEvents)
+        {
+            _haveCapturePos = false;
+            return;
+        }
+
+        var territory = Service.ClientState.TerritoryType;
+        if (territory != _lastCaptureTerritory)
+        {
+            _lastCaptureTerritory = territory;
+            _haveCapturePos = false;
+            Service.Log.Information($"[capture] TERRITORY {territory}");
+        }
+
+        if (territory != 1165)
+            return;
+        var p = Service.ObjectTable.LocalPlayer?.Position ?? new();
+        if (!_haveCapturePos || (p - _lastCapturePos).LengthXZ() > 1.0f)
+        {
+            _haveCapturePos = true;
+            _lastCapturePos = p;
+            Service.Log.Information($"[capture] POS <{p.X:f2}, {p.Y:f2}, {p.Z:f2}>");
+        }
     }
 
     private void UpdateAutoJoin()
