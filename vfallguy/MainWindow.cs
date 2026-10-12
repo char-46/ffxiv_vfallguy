@@ -178,10 +178,12 @@ public class MainWindow : Window, IDisposable
                 var pos = Service.ObjectTable.LocalPlayer!.Position;
                 mapType = pos switch
                 {
-                    { X: >= -40 and <= 40, Z: <= -180 } => typeof(Map1),          // 1A: central corridor
-                    { X: <= -150, Z: >= 100 and <= 350 } => typeof(Map2B),        // 2B: west platforms
-                    { X: >= -40 and <= 40, Z: >= 100 and <= 350 } => typeof(Map3), // 3: center arena
-                    _ => null                                                     // 1B (x~-200, z -130..-281) and 2A (x~+200, z -108..-129) not yet modeled
+                    { X: >= -40 and <= 40, Z: <= -180 } => typeof(Map1),            // 1A: central corridor
+                    { X: <= -150, Z: <= -100 and >= -300 } => typeof(Map1B),        // 1B: west climbing maze
+                    { X: >= 150, Z: <= -90 and >= -155 } => typeof(Map2A),          // 2A: east ring bridge
+                    { X: <= -150, Z: >= 100 and <= 350 } => typeof(Map2B),          // 2B: west platforms
+                    { X: >= -40 and <= 40, Z: >= 100 and <= 350 } => typeof(Map3),  // 3: center arena
+                    _ => null
                 };
             }
         }
