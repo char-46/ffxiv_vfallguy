@@ -68,43 +68,43 @@ public class MainWindow : Window, IDisposable
 
     public unsafe override void Draw()
     {
-        if (ImGui.Button("Queue"))
+        if (ImGui.Button("排队"))
             _automation.RegisterForDuty();
         ImGui.SameLine();
-        if (ImGui.Button("Leave"))
+        if (ImGui.Button("离开"))
             _automation.LeaveDuty();
         ImGui.SameLine();
-        ImGui.TextUnformatted($"Num players in duty: {_numPlayersInDuty} (autoleave: {(_autoLeaveAt == DateTime.MaxValue ? "never" : $"in {(_autoLeaveAt - _now).TotalSeconds:f1}s")})");
+        ImGui.TextUnformatted($"副本内人数: {_numPlayersInDuty} (自动离开: {(_autoLeaveAt == DateTime.MaxValue ? "关闭" : $"{(_autoLeaveAt - _now).TotalSeconds:f1}秒后")})");
 
-        ImGui.Checkbox("Auto register", ref _autoJoin);
+        ImGui.Checkbox("自动排队", ref _autoJoin);
         if (_autoJoin)
         {
             using (ImRaii.PushIndent())
             {
-                ImGui.SliderFloat("Delay###j", ref _autoJoinDelay, 0, 10);
+                ImGui.SliderFloat("延迟###j", ref _autoJoinDelay, 0, 10);
             }
         }
-        ImGui.Checkbox("Auto leave if not solo", ref _autoLeaveIfNotSolo);
+        ImGui.Checkbox("非单人自动离开", ref _autoLeaveIfNotSolo);
         if (_autoLeaveIfNotSolo)
         {
             using (ImRaii.PushIndent())
             {
-                ImGui.SliderFloat("Delay###l", ref _autoLeaveDelay, 0, 10);
-                ImGui.SliderInt("Limit", ref _autoLeaveLimit, 1, 23);
+                ImGui.SliderFloat("延迟###l", ref _autoLeaveDelay, 0, 10);
+                ImGui.SliderInt("人数上限", ref _autoLeaveLimit, 1, 23);
             }
         }
-        ImGui.Checkbox("Show AOE zones", ref _showAOEs);
-        ImGui.Checkbox("Show AOE debug text", ref _showAOEText);
-        ImGui.Checkbox("Show proposed path", ref _showPathfind);
+        ImGui.Checkbox("显示 AOE 范围", ref _showAOEs);
+        ImGui.Checkbox("显示 AOE 调试文本", ref _showAOEText);
+        ImGui.Checkbox("显示规划路线", ref _showPathfind);
 
         if (_map != null)
         {
             var strats = _map.Strats();
             if (strats.Length > 0)
                 ImGui.TextUnformatted(strats);
-            ImGui.TextUnformatted($"Pos: {_map.PlayerPos}");
-            ImGui.TextUnformatted($"Path: {_map.PathSkip}-{_map.Path.Count}");
-            ImGui.TextUnformatted($"Speed: {_movementSpeed}");
+            ImGui.TextUnformatted($"坐标: {_map.PlayerPos}");
+            ImGui.TextUnformatted($"路径: {_map.PathSkip}-{_map.Path.Count}");
+            ImGui.TextUnformatted($"速度: {_movementSpeed}");
 
             //foreach (var aoe in _map.AOEs.Where(aoe => aoe.NextActivation != default))
             //{

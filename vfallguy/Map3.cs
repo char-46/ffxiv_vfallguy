@@ -150,7 +150,7 @@ public class Map3 : Map
         // by the time we reach bottom of the ramp with rects, the full cycle should end - so if it started from outside, we'll be at '2'
         bool mech4InnerRectsWhenReached = _mech4RectsL.FirstIndex < 5;
         var lane2 = (_mech4Exaflare.FirstIndex + (mech4InnerRectsWhenReached ? 0 : 1)) % 4 + 1;
-        return $"{(initialLeft ? "L" : "R")} -> {lane1} -> {(mech3Left ? "L" : "R")} -> {lane2} [{(mech4InnerRectsWhenReached ? "inner" : "outer")}, {_mech2Exaflares.FirstIndex % 4 + 1} {_mech3Exaflares.FirstIndex % 4 + 1} {_mech4Exaflare.FirstIndex % 4 + 1} {_mech6Exaflare.FirstIndex % 4 + 1}]";
+        return $"{(initialLeft ? "左" : "右")} -> {lane1} -> {(mech3Left ? "左" : "右")} -> {lane2} [{(mech4InnerRectsWhenReached ? "内" : "外")}, {_mech2Exaflares.FirstIndex % 4 + 1} {_mech3Exaflares.FirstIndex % 4 + 1} {_mech4Exaflare.FirstIndex % 4 + 1} {_mech6Exaflare.FirstIndex % 4 + 1}]";
     }
 
     protected override List<Waypoint> RebuildPath(Vector3 startPos, DateTime startTime)
@@ -283,7 +283,7 @@ public class Map3 : Map
     protected override void OnStartCast(uint actionId, Vector3 casterPos)
     {
         if (actionId == 34812)
-            UpdateSequence(casterPos, 1, _mech4RectsL, _mech4RectsR);
+            UpdateSequence(casterPos, 1, _mech4RectsL, _mech4RectsR, _mech4RectsC);
     }
 
     private AOESequence CreateRotatingSequence(float repeat, float y, float z, params float[] x)

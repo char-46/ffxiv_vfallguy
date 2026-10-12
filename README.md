@@ -1,10 +1,18 @@
 # ffxiv_vfallguy dalamud plugin
 vFallguy dalamud plugin aims to make the Fall Guys Collaboration event in FFXIV less of a hassle
 
+## Fork 说明（char-46 修改版）
+
+- 修复上游提交 `7715d9a` 引入的回归：`GameEvents.ProcessActionEffectPacketDetour` 误将 `header->ActionType` 作为 actionId 传出，导致第三关算路/策略/AoE 标记全部失效（上游 issue #15 / #16）
+- `Map3.OnStartCast` 的候选序列补上 `_mech4RectsC`，消除中央列矩形每 6 秒刷 `Failed to find AOE` 错误
+- UI 文本汉化（直接修改字符串，未引入 i18n 框架）
+
 Dalamud repository:
 ```
-https://puni.sh/api/repository/veyn
+https://raw.githubusercontent.com/char-46/ffxiv_vfallguy/master/repo.json
 ```
+
+原版仓库：https://github.com/awgil/ffxiv_vfallguy
 
 # How to install
 
