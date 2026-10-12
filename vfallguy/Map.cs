@@ -218,9 +218,7 @@ public class Map : IDisposable
         {
             Service.Log.Error($"start task: {ex}");
         }
-
-        while (Path.Count > PathSkip && PlayerPos.Z < Path[PathSkip].Dest.Z) // TODO: better condition
-            ++PathSkip;
+        // note: waypoint skipping by proximity is done by the auto-move consumer; direction-agnostic
     }
 
     private List<Waypoint> BuildWaypointsTask(PathfindMap mapWithAOEs, DateTime now, Vector3 playerPos)

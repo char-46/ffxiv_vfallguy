@@ -30,9 +30,10 @@ public class Map1 : Map
         // funnel + gate
         map.BlockPixelsInsideAlignedRect(-30, -7.5f, -263, -254, 0, 60, 100, 0);
         map.BlockPixelsInsideAlignedRect(7.5f, 30, -263, -254, 0, 60, 100, 0);
-        // pendulum section (low ledge y6 on the left, plateau y10 on the right)
-        map.BlockPixelsInsideAlignedRect(-30, -15.5f, -336, -263, 0, 60, 100, 0);
-        map.BlockPixelsInsideAlignedRect(15.5f, 30, -336, -263, 0, 60, 100, 0);
+        // pendulum section: only the central plateau progresses; side ledges (y6) are penalty zones
+        // (being hit knocks you down there; they dead-end with a 4y climb back at the start)
+        map.BlockPixelsInsideAlignedRect(-30, -9.5f, -336, -263, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(9.5f, 30, -336, -263, 0, 60, 100, 0);
         // slope
         map.BlockPixelsInsideAlignedRect(-30, -8.5f, -366, -336, 0, 60, 100, 0);
         map.BlockPixelsInsideAlignedRect(8.5f, 30, -366, -336, 0, 60, 100, 0);

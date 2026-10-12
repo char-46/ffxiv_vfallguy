@@ -34,6 +34,7 @@ public class MainWindow : Window, IDisposable
     private Vector3 _lastCapturePos;
     private bool _haveCapturePos;
     private uint _lastCaptureTerritory;
+    private readonly HashSet<uint> _lastStatuses = new();
     private DateTime _autoJoinAt = DateTime.MaxValue;
     private DateTime _autoLeaveAt = DateTime.MaxValue;
     private int _numPlayersInDuty;
@@ -211,7 +212,7 @@ public class MainWindow : Window, IDisposable
         }
 
         var pos = _map.PlayerPos;
-        while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.0f)
+        while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.5f)
             ++_map.PathSkip;
         if (_map.Path.Count <= _map.PathSkip)
         {
@@ -222,8 +223,12 @@ public class MainWindow : Window, IDisposable
         var wp = _map.Path[_map.PathSkip];
         if (wp.StartMoveAt != default && _now < wp.StartMoveAt)
         {
-            _mover.Enabled = false;
-            return;
+            // brief waits: keep gliding toward the point instead of hard-stopping (anti-jitter)
+            if ((_now - wp.StartMoveAt).TotalSeconds < -0.4)
+            {
+                _mover.Enabled = false;
+                return;
+            }
         }
         _mover.DesiredPosition = wp.Dest;
         _mover.Enabled = true;
@@ -253,6 +258,20 @@ public class MainWindow : Window, IDisposable
             _haveCapturePos = true;
             _lastCapturePos = p;
             Service.Log.Information($"[capture] POS <{p.X:f2}, {p.Y:f2}, {p.Z:f2}>");
+        }
+
+        var player = Service.ObjectTable.LocalPlayer;
+        var cur = player != null ? player.StatusList.Select(s => s.StatusId).Where(id => id != 0).ToHashSet() : [];
+        foreach (var id in cur)
+            if (_lastStatuses.Add(id))
+            {
+                var name = Service.LuminaRow<Lumina.Excel.Sheets.Status>(id)?.Name.ToString() ?? "?";
+                Service.Log.Information($"[capture] BUFF +{id} {name}");
+            }
+        foreach (var id in _lastStatuses.Where(id => !cur.Contains(id)).ToList())
+        {
+            Service.Log.Information($"[capture] BUFF -{id}");
+            _lastStatuses.Remove(id);
         }
     }
 
