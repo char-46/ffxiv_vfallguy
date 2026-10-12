@@ -73,7 +73,18 @@ public class MainWindow : Window, IDisposable
         UpdateAutoMove();
         UpdateCapture();
         if (_terrainScan && IsOpen && !Service.Condition[ConditionFlag.BetweenAreas])
-            TerrainScanner.Update(Service.ObjectTable.LocalPlayer?.Position ?? new());
+        {
+            try
+            {
+                TerrainScanner.Update(Service.ObjectTable.LocalPlayer?.Position ?? new());
+            }
+            catch (Exception e)
+            {
+                Service.Log.Error($"Terrain scanner failed (signature mismatch?): {e.Message}");
+                _terrainScan = false;
+                TerrainScanner.Reset();
+            }
+        }
         UpdateAutoJoin();
         UpdateAutoLeave();
         DrawOverlays();
