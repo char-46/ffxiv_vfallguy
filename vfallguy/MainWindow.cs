@@ -28,6 +28,8 @@ public class MainWindow : Window, IDisposable
     private float _repathInterval = 0.25f;
     private bool _autoMove;
     private bool _captureEvents;
+    private bool _terrainScan;
+    private string? _lastTerrainExport;
     private readonly OverrideMovement _mover = new();
     private Vector3 _lastCapturePos;
     private bool _haveCapturePos;
@@ -70,6 +72,8 @@ public class MainWindow : Window, IDisposable
         UpdateMap();
         UpdateAutoMove();
         UpdateCapture();
+        if (_terrainScan && IsOpen && !Service.Condition[ConditionFlag.BetweenAreas])
+            TerrainScanner.Update(Service.ObjectTable.LocalPlayer?.Position ?? new());
         UpdateAutoJoin();
         UpdateAutoLeave();
         DrawOverlays();
@@ -117,6 +121,14 @@ public class MainWindow : Window, IDisposable
         }
         ImGui.Checkbox("自动移动 (实验)", ref _autoMove);
         ImGui.Checkbox("记录事件 (数据采集)", ref _captureEvents);
+        ImGui.Checkbox("地形扫描 (实验)", ref _terrainScan);
+        ImGui.SameLine();
+        if (ImGui.Button("导出地形"))
+            _lastTerrainExport = TerrainScanner.Export(Service.ClientState.TerritoryType);
+        ImGui.SameLine();
+        if (ImGui.Button("清空"))
+            TerrainScanner.Reset();
+        ImGui.TextUnformatted($"已扫描: {TerrainScanner.ScannedCount} 格{(_lastTerrainExport != null ? $"\n{_lastTerrainExport}" : "")}");
 
         if (_map != null)
         {
