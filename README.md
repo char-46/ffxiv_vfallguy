@@ -6,6 +6,9 @@ vFallguy dalamud plugin aims to make the Fall Guys Collaboration event in FFXIV 
 - 修复上游提交 `7715d9a` 引入的回归：`GameEvents.ProcessActionEffectPacketDetour` 误将 `header->ActionType` 作为 actionId 传出，导致第三关算路/策略/AoE 标记全部失效（上游 issue #15 / #16）
 - `Map3.OnStartCast` 的候选序列补上 `_mech4RectsC`，消除中央列矩形每 6 秒刷 `Failed to find AOE` 错误
 - UI 文本汉化（直接修改字符串，未引入 i18n 框架）
+- 新增"动态算路 (实验)"：恢复时空洪泛寻路器（`PathfindFloodFill`），按实时 AOE 时间表每 2 秒重算躲避路线，可与手写路线切换对比
+- 新增"自动移动 (vnavmesh) (实验)"：通过 vnavmesh IPC（Nav.IsReady/Pathfind/MoveTo/Stop）沿推荐路线自动移动，遵守 AOE 等待窗口
+- 新增"记录事件 (数据采集)"：把副本内所有技能释放（actionId + 坐标）写入 dalamud.log，用于逆向前两关的机制数据
 
 Dalamud repository:
 ```

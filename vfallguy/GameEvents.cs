@@ -33,6 +33,8 @@ public unsafe struct ActionEffectHeader
 
 public unsafe class GameEvents : IDisposable
 {
+    public static bool CaptureEvents;
+
     public delegate void ActionEffectEventDelegate(uint actionId, Vector3 casterPos);
     public event ActionEffectEventDelegate? ActionEffectEvent;
 
@@ -65,13 +67,17 @@ public unsafe class GameEvents : IDisposable
     private void ProcessActionEffectPacketDetour(uint casterEntityId, Character* casterPtr, Vector3* targetPos, ActionEffectHandler.Header* header, ActionEffectHandler.TargetEffects* effects, GameObjectId* targetEntityIds)
     {
         _processActionEffectPacketHook.Original(casterEntityId, casterPtr, targetPos, header, effects, targetEntityIds);
-            if (header->ActionType == (byte)ActionType.Action)
-                ActionEffectEvent?.Invoke(header->ActionId, casterPtr->GameObject.Position);
+        if (CaptureEvents)
+            Service.Log.Information($"[capture] AE {header->ActionId} @ {casterPtr->GameObject.Position}");
+        if (header->ActionType == (byte)ActionType.Action)
+            ActionEffectEvent?.Invoke(header->ActionId, casterPtr->GameObject.Position);
     }
 
     private void StartCastDetour(Character* self, ActionType actionType, uint actionId, ushort* intPos, float rot, float castTime)
     {
         _startCastHook.Original(self, actionType, actionId, intPos, rot, castTime);
+        if (CaptureEvents)
+            Service.Log.Information($"[capture] SC {actionId} @ {self->GameObject.Position}");
         if (actionType == ActionType.Action)
             StartCastEvent?.Invoke(actionId, self->GameObject.Position);
     }

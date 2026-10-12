@@ -24,6 +24,10 @@ public class MainWindow : Window, IDisposable
     private bool _showAOEs;
     private bool _showAOEText;
     private bool _showPathfind;
+    private bool _dynamicPathfind;
+    private bool _autoMove;
+    private bool _captureEvents;
+    private readonly NavDriver _nav = new();
     private DateTime _autoJoinAt = DateTime.MaxValue;
     private DateTime _autoLeaveAt = DateTime.MaxValue;
     private int _numPlayersInDuty;
@@ -42,6 +46,7 @@ public class MainWindow : Window, IDisposable
         _map?.Dispose();
         _gameEvents.Dispose();
         _automation.Dispose();
+        _nav.Dispose();
     }
 
     public unsafe override void PreOpenCheck()
@@ -59,6 +64,7 @@ public class MainWindow : Window, IDisposable
         IsOpen = Service.ClientState.TerritoryType is 1165 or 1197;
 
         UpdateMap();
+        UpdateAutoMove();
         UpdateAutoJoin();
         UpdateAutoLeave();
         DrawOverlays();
@@ -96,6 +102,9 @@ public class MainWindow : Window, IDisposable
         ImGui.Checkbox("显示 AOE 范围", ref _showAOEs);
         ImGui.Checkbox("显示 AOE 调试文本", ref _showAOEText);
         ImGui.Checkbox("显示规划路线", ref _showPathfind);
+        ImGui.Checkbox("动态算路 (实验)", ref _dynamicPathfind);
+        ImGui.Checkbox("自动移动 (vnavmesh)", ref _autoMove);
+        ImGui.Checkbox("记录事件 (数据采集)", ref _captureEvents);
 
         if (_map != null)
         {
@@ -147,7 +156,36 @@ public class MainWindow : Window, IDisposable
                 _map = (Map?)Activator.CreateInstance(mapType, _gameEvents);
         }
 
+        if (_map != null)
+            _map.DynamicPathfinding = _dynamicPathfind;
         _map?.Update();
+    }
+
+    private void UpdateAutoMove()
+    {
+        GameEvents.CaptureEvents = _captureEvents;
+        if (!_autoMove || !IsOpen || _map == null || Service.Condition[ConditionFlag.BetweenAreas])
+        {
+            _nav.Stop();
+            return;
+        }
+
+        var pos = _map.PlayerPos;
+        while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.0f)
+            ++_map.PathSkip;
+        if (_map.Path.Count <= _map.PathSkip)
+        {
+            _nav.Stop();
+            return;
+        }
+
+        var wp = _map.Path[_map.PathSkip];
+        if (wp.StartMoveAt != default && _now < wp.StartMoveAt)
+        {
+            _nav.Stop();
+            return;
+        }
+        _nav.Navigate(pos, wp.Dest);
     }
 
     private void UpdateAutoJoin()

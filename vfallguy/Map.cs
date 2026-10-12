@@ -148,6 +148,8 @@ public class Map : IDisposable
     public int PathSkip;
     public Vector3 PlayerPos;
     public float AOELeeway = 0.5f;
+    public bool DynamicPathfinding;
+    private DateTime _nextPathfindAt;
 
     public Map(GameEvents events, PathfindMap baseMap, List<(float z, float y)> heightProfile, float goalZ)
     {
@@ -170,24 +172,32 @@ public class Map : IDisposable
         try
         {
             PlayerPos = Service.ObjectTable.LocalPlayer!.Position;
-            //if (PathTask?.IsCompleted ?? false)
-            //{
-            //    Path = PathTask.Result;
-            //    PathSkip = 0;
-            //    PathTask = null;
-            //}
-            //if (PathTask == null)
-            //{
-            //    var mapWithAOEs = BaseMap.Clone();
-            //    var now = DateTime.Now;
-            //    foreach (var aoe in AOEs)
-            //    {
-            //        aoe.Rasterize(mapWithAOEs, now, AOELeeway);
-            //    }
-            //    PathTask = Task.Run(() => BuildWaypointsTask(mapWithAOEs, now, PlayerPos));
-            //}
-            Path = RebuildPath(PlayerPos, DateTime.Now);
-            PathSkip = 0;
+            if (DynamicPathfinding)
+            {
+                if (PathTask?.IsCompleted ?? false)
+                {
+                    Path = PathTask.Result;
+                    PathSkip = 0;
+                    PathTask = null;
+                }
+                var now = DateTime.Now;
+                if (PathTask == null && now >= _nextPathfindAt)
+                {
+                    var mapWithAOEs = BaseMap.Clone();
+                    foreach (var aoe in AOEs)
+                    {
+                        aoe.Rasterize(mapWithAOEs, now, AOELeeway);
+                    }
+                    var playerPos = PlayerPos;
+                    PathTask = Task.Run(() => BuildWaypointsTask(mapWithAOEs, now, playerPos));
+                    _nextPathfindAt = now.AddSeconds(2);
+                }
+            }
+            else
+            {
+                Path = RebuildPath(PlayerPos, DateTime.Now);
+                PathSkip = 0;
+            }
         }
         catch (Exception ex)
         {
@@ -196,6 +206,57 @@ public class Map : IDisposable
 
         while (Path.Count > PathSkip && PlayerPos.Z < Path[PathSkip].Dest.Z) // TODO: better condition
             ++PathSkip;
+    }
+
+    private List<Waypoint> BuildWaypointsTask(PathfindMap mapWithAOEs, DateTime now, Vector3 playerPos)
+    {
+        try
+        {
+            var (sx, sy) = mapWithAOEs.WorldToGrid(playerPos);
+            sx = mapWithAOEs.ClampX(sx);
+            sy = mapWithAOEs.ClampY(sy);
+            var goalY = mapWithAOEs.WorldToGrid(new Vector3(0, 0, GoalZ)).y;
+            var pathfind = new PathfindFloodFill(mapWithAOEs, Speed, sx, sy, 0);
+            var solution = pathfind.SolveUntilY(goalY).ToList();
+            if (solution.Count == 0)
+                return [];
+
+            solution.Reverse();
+            for (int i = 1; i < solution.Count - 1; ++i)
+            {
+                var curr = solution[i];
+                if (solution[i + 1].x - curr.x == curr.x - solution[i - 1].x && solution[i + 1].y - curr.y == curr.y - solution[i - 1].y)
+                {
+                    solution.RemoveAt(i);
+                    --i;
+                }
+            }
+
+            var invSpeed = 1.0f / Speed;
+            var firstNontrivial = solution.FindIndex(p => !mapWithAOEs.StraightLineAllowed(sx, sy, 0, p.x, p.y, invSpeed));
+
+            var res = new List<Waypoint>();
+            DateTime prevMoveAt = now;
+            Vector3 prevPos = playerPos;
+            foreach (var (x, y, t) in solution.Skip(firstNontrivial > 0 ? firstNontrivial - 1 : 0))
+            {
+                var p = BaseMap.GridToWorld(x, y, 0.5f, 0.5f);
+                p.Y = HeightAt(p.Z);
+                var travel = (p - prevPos).LengthXZ() * InvSpeed;
+                var moveAt = now.AddSeconds(t * mapWithAOEs.TimeResolution - travel);
+                if (moveAt < prevMoveAt)
+                    moveAt = prevMoveAt;
+                res.Add(new() { Dest = p, StartMoveAt = moveAt > now.AddSeconds(0.1f) ? moveAt : default });
+                prevMoveAt = moveAt.AddSeconds(travel);
+                prevPos = p;
+            }
+            return res;
+        }
+        catch (Exception ex)
+        {
+            Service.Log.Error($"exec task: {ex}");
+            return [];
+        }
     }
 
     public float HeightAt(float z)

@@ -13,6 +13,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin(IDalamudPluginInterface dalamud)
     {
         dalamud.Create<Service>();
+        Service.PluginInterface = dalamud;
 
         _wnd = new();
         WindowSystem.AddWindow(_wnd);
