@@ -16,7 +16,28 @@ public class Map1 : Map
     private AOESequence _gatePillarsB = null!;
     private readonly List<AOESequence> _lanes = [];
 
-    private static PathfindMap BuildBaseMap() => new(0.5f, 0.25f, new(0, 10, -285), 12, 90, 8);
+    private static PathfindMap BuildBaseMap()
+    {
+        var map = new PathfindMap(0.5f, 0.25f, new(1, 10, -280), 17, 90, 60);
+
+        // first section: rotating circles, wide corridor
+        map.BlockPixelsInsideAlignedRect(-30, -11, -195, -246, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(17, 30, -195, -246, 0, 60, 100, 0);
+        // gate section: narrow corridor
+        map.BlockPixelsInsideAlignedRect(-30, -7.5f, -246, -264, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(7.5f, 30, -246, -264, 0, 60, 100, 0);
+        // conveyor / pendulum section: left-side fast lane
+        map.BlockPixelsInsideAlignedRect(-30, -15, -264, -338, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(4, 30, -264, -338, 0, 60, 100, 0);
+        // pre-slope channel
+        map.BlockPixelsInsideAlignedRect(-30, -5.5f, -338, -344, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(1.5f, 30, -338, -344, 0, 60, 100, 0);
+        // slope
+        map.BlockPixelsInsideAlignedRect(-30, -6.5f, -344, -366, 0, 60, 100, 0);
+        map.BlockPixelsInsideAlignedRect(6.5f, 30, -344, -366, 0, 60, 100, 0);
+
+        return map;
+    }
 
     private static readonly List<(float z, float y)> _heightProfile =
     [
@@ -28,8 +49,15 @@ public class Map1 : Map
         (-180f, 10f),
     ];
 
-    public Map1(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, -370)
+    public Map1(GameEvents events) : base(events, BuildBaseMap(), _heightProfile, -362)
     {
+        MovementZones =
+        [
+            (-305f, -262f, 2.0f, true),
+            (-322f, -305f, 0.6f, false),
+            (-366f, -344f, 0.6f, true),
+        ];
+
         for (int i = 0; i < 5; ++i)
         {
             var z = -202 - 10 * i;

@@ -73,9 +73,22 @@ public class Map : IDisposable
         {
             AOEShape.Circle => m.BlockPixelsInsideCircle(Origin.XZ(), R1, (float)(NextActivation - now).TotalSeconds, 0.1f, Repeat, leeway),
             AOEShape.Square => m.BlockPixelsInsideSquare(Origin.XZ(), R1, (float)(NextActivation - now).TotalSeconds, 0.1f, Repeat, leeway),
-            AOEShape.Rect => false, // TODO: implement
+            AOEShape.Rect => RectRasterize(m, (float)(NextActivation - now).TotalSeconds, leeway),
             _ => false
         } : false;
+
+        private bool RectRasterize(PathfindMap m, float tStart, float leeway)
+        {
+            var rd = new Vector2(MathF.Sin(Rotation), MathF.Cos(Rotation));
+            var rn = new Vector2(rd.Y, -rd.X);
+            var a = Origin.XZ() + R2 * rn;
+            var b = Origin.XZ() - R2 * rn;
+            var c = b + rd * R1;
+            var d = a + rd * R1;
+            var mn = Vector2.Min(Vector2.Min(a, b), Vector2.Min(c, d));
+            var mx = Vector2.Max(Vector2.Max(a, b), Vector2.Max(c, d));
+            return m.BlockPixelsInside(mn, mx, v => Geom.RectContains(Origin, R1, R2, Rotation, new Vector3(v.X, Origin.Y, v.Y)), tStart, 0.1f, Repeat, leeway);
+        }
     }
 
     public class AOESequence
@@ -150,6 +163,7 @@ public class Map : IDisposable
     public float AOELeeway = 0.5f;
     public bool DynamicPathfinding;
     public float RepathInterval = 0.25f;
+    public List<(float zMin, float zMax, float speedMul, bool noStay)> MovementZones = [];
     private DateTime _nextPathfindAt;
 
     public Map(GameEvents events, PathfindMap baseMap, List<(float z, float y)> heightProfile, float goalZ)
@@ -217,7 +231,8 @@ public class Map : IDisposable
             sx = mapWithAOEs.ClampX(sx);
             sy = mapWithAOEs.ClampY(sy);
             var goalY = mapWithAOEs.WorldToGrid(new Vector3(0, 0, GoalZ)).y;
-            var pathfind = new PathfindFloodFill(mapWithAOEs, Speed, sx, sy, 0);
+            var zones = MovementZones.Select(z => (mapWithAOEs.WorldToGrid(new Vector3(0, 0, z.zMin)).y, mapWithAOEs.WorldToGrid(new Vector3(0, 0, z.zMax)).y, z.speedMul, z.noStay)).ToList();
+            var pathfind = new PathfindFloodFill(mapWithAOEs, Speed, sx, sy, 0, zones);
             var solution = pathfind.SolveUntilY(goalY).ToList();
             if (solution.Count == 0)
                 return [];
