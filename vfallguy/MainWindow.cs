@@ -178,11 +178,10 @@ public class MainWindow : Window, IDisposable
                 var pos = Service.ObjectTable.LocalPlayer!.Position;
                 mapType = pos switch
                 {
-                    //{ X: >= -20 and <= 20, Z: >= -400 and <= -100 } => typeof(Map1A),
-                    { Z: <= -180 } => typeof(Map1),
-                    { X: <= -150, Z: >= 100 and <= 350 } => typeof(Map2B),
-                    { X: >= -40 and <= 40, Z: >= 100 and <= 350 } => typeof(Map3),
-                    _ => null
+                    { X: >= -40 and <= 40, Z: <= -180 } => typeof(Map1),          // 1A: central corridor
+                    { X: <= -150, Z: >= 100 and <= 350 } => typeof(Map2B),        // 2B: west platforms
+                    { X: >= -40 and <= 40, Z: >= 100 and <= 350 } => typeof(Map3), // 3: center arena
+                    _ => null                                                     // 1B (x~-200, z -130..-281) and 2A (x~+200, z -108..-129) not yet modeled
                 };
             }
         }
@@ -222,6 +221,8 @@ public class MainWindow : Window, IDisposable
         }
 
         var wp = _map.Path[_map.PathSkip];
+        if (wp.Jump && (wp.Dest - pos).LengthXZ() < 1.2f)
+            _mover.ExecuteJump();
         if (wp.StartMoveAt != default && _now < wp.StartMoveAt)
         {
             // brief waits: keep gliding toward the point instead of hard-stopping (anti-jitter)

@@ -1,7 +1,9 @@
 using System;
 using System.Numerics;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using Dalamud.Game.ClientState.Conditions;
 
 namespace vfallguy;
 
@@ -28,6 +30,8 @@ public unsafe class OverrideMovement : IDisposable
     public bool IgnoreUserInput;
     public Vector3 DesiredPosition;
     public float Precision = 0.4f;
+
+    private DateTime _nextJump;
 
     private delegate void RMIWalkDelegate(void* self, float* sumLeft, float* sumForward, float* sumTurnLeft, byte* haveBackwardOrStrafe, byte* a6, byte bAdditiveUnk);
     private Hook<RMIWalkDelegate>? _hook;
@@ -61,6 +65,18 @@ public unsafe class OverrideMovement : IDisposable
         {
             *sumLeft = MathF.Sin(relDir.Value);
             *sumForward = MathF.Cos(relDir.Value);
+        }
+    }
+
+    // jump = GeneralAction 2 via ActionManager (same technique as awgil/ffxiv_navmesh FollowPath)
+    public void ExecuteJump()
+    {
+        if (Service.Condition[ConditionFlag.Diving])
+            return;
+        if (DateTime.Now >= _nextJump)
+        {
+            ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2);
+            _nextJump = DateTime.Now.AddMilliseconds(100);
         }
     }
 
