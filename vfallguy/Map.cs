@@ -335,10 +335,24 @@ public class Map : IDisposable
 
     protected int FindIndexInSequence(AOESequence sequence, Vector3 pos)
     {
+        int best = -1;
+        float bestDt = float.MaxValue;
+        var now = DateTime.Now;
         for (int i = 0; i < sequence.Count; ++i)
-            if ((AOEs[sequence.StartIndex + i].Origin - pos).LengthSquared() < 1)
+        {
+            var aoe = AOEs[sequence.StartIndex + i];
+            if ((aoe.Origin - pos).LengthSquared() >= 1)
+                continue;
+            if (aoe.NextActivation == default)
                 return i;
-        return -1;
+            var dt = Math.Abs((float)(aoe.NextActivation - now).TotalSeconds);
+            if (dt < bestDt)
+            {
+                bestDt = dt;
+                best = i;
+            }
+        }
+        return best;
     }
 
     protected RepeatingAOE SequenceAOE(AOESequence seq, int index) => AOEs[seq.StartIndex + index];

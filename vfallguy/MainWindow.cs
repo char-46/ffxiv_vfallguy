@@ -27,7 +27,7 @@ public class MainWindow : Window, IDisposable
     private bool _dynamicPathfind;
     private bool _autoMove;
     private bool _captureEvents;
-    private readonly NavDriver _nav = new();
+    private readonly OverrideMovement _mover = new();
     private Vector3 _lastCapturePos;
     private bool _haveCapturePos;
     private uint _lastCaptureTerritory;
@@ -49,7 +49,7 @@ public class MainWindow : Window, IDisposable
         _map?.Dispose();
         _gameEvents.Dispose();
         _automation.Dispose();
-        _nav.Dispose();
+        _mover.Dispose();
     }
 
     public unsafe override void PreOpenCheck()
@@ -107,7 +107,7 @@ public class MainWindow : Window, IDisposable
         ImGui.Checkbox("显示 AOE 调试文本", ref _showAOEText);
         ImGui.Checkbox("显示规划路线", ref _showPathfind);
         ImGui.Checkbox("动态算路 (实验)", ref _dynamicPathfind);
-        ImGui.Checkbox("自动移动 (vnavmesh)", ref _autoMove);
+        ImGui.Checkbox("自动移动 (实验)", ref _autoMove);
         ImGui.Checkbox("记录事件 (数据采集)", ref _captureEvents);
 
         if (_map != null)
@@ -146,6 +146,8 @@ public class MainWindow : Window, IDisposable
                 mapType = pos switch
                 {
                     //{ X: >= -20 and <= 20, Z: >= -400 and <= -100 } => typeof(Map1A),
+                    { Z: <= -180 } => typeof(Map1),
+                    { X: <= -150, Z: >= 100 and <= 350 } => typeof(Map2B),
                     { X: >= -40 and <= 40, Z: >= 100 and <= 350 } => typeof(Map3),
                     _ => null
                 };
@@ -170,7 +172,7 @@ public class MainWindow : Window, IDisposable
         GameEvents.CaptureEvents = _captureEvents;
         if (!_autoMove || !IsOpen || _map == null || Service.Condition[ConditionFlag.BetweenAreas])
         {
-            _nav.Stop();
+            _mover.Enabled = false;
             return;
         }
 
@@ -179,17 +181,18 @@ public class MainWindow : Window, IDisposable
             ++_map.PathSkip;
         if (_map.Path.Count <= _map.PathSkip)
         {
-            _nav.Stop();
+            _mover.Enabled = false;
             return;
         }
 
         var wp = _map.Path[_map.PathSkip];
         if (wp.StartMoveAt != default && _now < wp.StartMoveAt)
         {
-            _nav.Stop();
+            _mover.Enabled = false;
             return;
         }
-        _nav.Navigate(pos, wp.Dest);
+        _mover.DesiredPosition = wp.Dest;
+        _mover.Enabled = true;
     }
 
     private void UpdateCapture()
