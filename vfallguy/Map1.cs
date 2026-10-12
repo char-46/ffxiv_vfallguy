@@ -19,7 +19,7 @@ public class Map1 : Map
     private static PathfindMap BuildBaseMap()
     {
         // walls derived from BGCollision terrain scan (terrain_1165_20261012_180442.json)
-        var map = new PathfindMap(0.5f, 0.25f, new(0, 10, -280), 20, 100, 60);
+        var map = new PathfindMap(0.5f, 0.25f, new(0, 10, -280), 20, 100, 90);
 
         // start pad
         map.BlockPixelsInsideAlignedRect(-30, -11.5f, -189, -180, 0, 60, 100, 0);

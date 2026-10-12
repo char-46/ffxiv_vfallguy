@@ -102,7 +102,7 @@ public class Map1B : Map
 
     private static PathfindMap BuildBaseMap()
     {
-        var map = new PathfindMap(0.5f, 0.25f, new(-200, 13, -195), 22, 100, 60);
+        var map = new PathfindMap(0.5f, 0.25f, new(-200, 13, -195), 22, 100, 90);
         foreach (var w in _walls)
             map.BlockPixelsInsideAlignedRect(w.x1, w.x2, w.z1, w.z2, 0, 60, 100, 0);
         return map;

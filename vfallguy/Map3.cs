@@ -25,7 +25,7 @@ public class Map3 : Map
 
     private static PathfindMap BuildBaseMap()
     {
-        var map = new PathfindMap(0.5f, 0.25f, new(0, 0, 223), 14, 101, 60);
+        var map = new PathfindMap(0.5f, 0.25f, new(0, 0, 223), 14, 101, 120);
 
         // columns at entrance
         map.BlockPixelsInsideCircle(new(-4, 292), 1.5f, 0, 60, 100, 0);

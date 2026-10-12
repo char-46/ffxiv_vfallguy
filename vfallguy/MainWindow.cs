@@ -26,7 +26,7 @@ public class MainWindow : Window, IDisposable
     private bool _showAOEText;
     private bool _showPathfind;
     private bool _dynamicPathfind;
-    private float _repathInterval = 0.25f;
+    private float _repathInterval = 0.5f;
     private bool _autoMove;
     private bool _captureEvents;
     private bool _terrainScan;
@@ -214,7 +214,7 @@ public class MainWindow : Window, IDisposable
         }
 
         var pos = _map.PlayerPos;
-        while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.5f)
+        while (_map.Path.Count > _map.PathSkip && (_map.Path[_map.PathSkip].Dest - pos).LengthXZ() < 1.0f)
             ++_map.PathSkip;
         if (_map.Path.Count <= _map.PathSkip)
         {
